@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>data-cleaning-toolkit</title>
-<meta name="description" content="A reusable data-cleaning-and-modeling **toolkit** (`src/toolkit/`), proven against **four real, unrelated public datasets** — Chilean finance, Chilean copper mining, South American">
+<meta name="description" content="A reusable data-cleaning-and-modeling toolkit (src/toolkit/), proven against four real, unrelated public datasets — Chilean finance, Chilean copper mining, South American agricultu">
 <style>
   :root { --bg:#FBFAF8; --surface:#FFF; --ink:#23201D; --muted:#6B645D; --line:#E3DED7; --accent:#B5553D; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
@@ -47,7 +47,7 @@
 <h2>Domain 1 — Financial system (Banco Central de Chile)</h2>
 <figure>
 <img src="figures/missingness_before_after.png" alt="Missingness before/after calendar reindexing" loading="lazy">
-<figcaption>Two bars per series: the orange bar is the % of calendar days with no published value before cleaning, the blue bar is the same metric after <code>reindex_to_full_calendar</code> + forward-fill. Dollar and TPM start at ~32% missing (every weekend and public holiday has no quote, since Chile&#x27;s FX market only trades on business days) and drop to 0% once those gaps are explicitly created as rows and filled with the last known value. UF barely moves because Chile&#x27;s inflation-indexed accounting unit is, by law, defined for every single calendar day — it has almost nothing to reindex.</figcaption>
+<figcaption>Before/after bar pair per curated indicator, at the fact-table level (country×indicator×year cells) rather than per-column like the other domains&#x27; charts — the direct numeric counterpart of the 86% gap-recovery rate quoted in the text above, and a reminder that the remaining post-cleaning bar height (14%) is exactly the set of series with literally no real observation anywhere to interpolate from, not a residual bug.</figcaption>
 </figure>
 <figure>
 <img src="figures/return_distribution_before_after.png" alt="Dollar return distribution, raw vs. winsorized" loading="lazy">
@@ -59,28 +59,28 @@
 </figure>
 <figure>
 <img src="figures/feature_correlation.png" alt="Feature correlation heatmap" loading="lazy">
-<figcaption>A Pearson correlation matrix (red = positive, blue = negative, white ≈ 0) between every model feature — lagged returns, rolling volatility windows, TPM/IPC/IMACEC — and the actual target column (tomorrow&#x27;s return), included as its own row/column so its correlation with every feature is visible directly. Every cell touching the target is close to white: no single feature moves together with tomorrow&#x27;s return in any meaningful linear way, which is exactly what should be expected of an efficient market and previews why every model in the table below lands near R²≈0.</figcaption>
+<figcaption>Correlation heatmap between the socioeconomic indicators (health spending, water/sanitation access, GDP per capita, infant mortality, Gini, etc.) and next year&#x27;s life expectancy. Expect — and the chart shows — strong real correlation from infant mortality and basic-services access in particular, the same real drivers epidemiological literature would predict, which is what makes this domain&#x27;s high R² a believable result rather than an overfit one.</figcaption>
 </figure>
 <figure>
 <img src="figures/mlp_training_curve.png" alt="MLP training curve" loading="lazy">
-<figcaption>Training loss (blue) and validation loss (orange) plotted against training epoch, with a dashed vertical line marking the epoch whose validation loss was actually kept as the final model (not necessarily the last epoch run — <code>train_with_early_stopping</code> restores the best checkpoint, never just the most recent one). The training floor of ≥100 epochs is directly visible as the x-axis length.</figcaption>
+<figcaption>Train/validation loss vs. epoch for the life-expectancy MLP — note that both the features <em>and</em> the target were z-score scaled before training here (unlike the financial domain, where only the features were scaled), because the target&#x27;s real scale (life-expectancy years, mean ~70) is far from a freshly-initialized network&#x27;s near-zero output range; skipping that step is what originally produced wildly unrealistic predictions (details in <code>model.py</code>&#x27;s docstring).</figcaption>
 </figure>
 <figure>
 <img src="figures/best_model_regression_diagnostics.png" alt="Real vs. predicted return" loading="lazy">
-<figcaption>Two panels side by side. Left: every test-set day plotted as (actual return, predicted return), with a dashed diagonal line showing where a perfect model would put every point — the closer the cloud hugs that line, the better the model. Right: the same predictions&#x27; residuals (actual − predicted) plotted against the prediction itself, which should look like a flat, structureless band if the model isn&#x27;t systematically over- or under-predicting in some region. Here both panels show a wide, shapeless scatter with no visible relationship to the diagonal — the honest visual signature of a model with essentially no real predictive power (R²≈0), not a plotting bug.</figcaption>
+<figcaption>Actual-vs-predicted scatter plus residuals for the domain&#x27;s best model, Random Forest. The cloud sits tightly along the dashed diagonal across almost the entire real range of the axis (roughly 40 to 85 years), including the countries near the low end — the visual counterpart of a real R²=0.943, the strongest result of all four domains.</figcaption>
 </figure>
 <figure>
 <img src="figures/model_comparison.png" alt="Model comparison" loading="lazy">
-<figcaption>A grouped bar chart with one bar per model (baseline, MLP, XGBoost, ElasticNet, Random Forest, LSTM) across three metrics (R², RMSE, MAE), numeric value labeled on top of each bar. All six bars in every metric group sit at essentially the same height — the visual proof that none of the six approaches meaningfully outperforms a model that just predicts the historical average.</figcaption>
+<figcaption>Grouped bars per model per metric — the train-mean baseline&#x27;s R² bar is drawn clearly negative (not clipped at zero), the sharpest such contrast of any domain in this project, because a 1960s-era global average is a particularly bad predictor for a 2019–2024 test period given how much the real global trend has moved since then.</figcaption>
 </figure>
 <h2>Domain 2 — Mining (COCHILCO)</h2>
 <figure>
 <img src="figures/missingness_before_after.png" alt="Missingness before/after" loading="lazy">
-<figcaption>Same before/after bar-pair layout as the financial domain, but the result here is different and itself informative: both bars sit at (or near) 0% for the 38 real mine columns, because — as the writeup above explains — a mine that isn&#x27;t producing reports an explicit <code>0.0</code>, not a blank cell. This chart is the visual confirmation that this domain&#x27;s cleaning challenge really is structural (wrong rows/columns), not missing values, before any imputation logic gets a chance to (wrongly) treat those zeros as gaps.</figcaption>
+<figcaption>Before/after bar pair per curated indicator, at the fact-table level (country×indicator×year cells) rather than per-column like the other domains&#x27; charts — the direct numeric counterpart of the 86% gap-recovery rate quoted in the text above, and a reminder that the remaining post-cleaning bar height (14%) is exactly the set of series with literally no real observation anywhere to interpolate from, not a residual bug.</figcaption>
 </figure>
 <figure>
 <img src="figures/production_distribution_before_after.png" alt="Production distribution before/after winsorizing" loading="lazy">
-<figcaption>Raw (orange) vs. winsorized (blue) distribution of monthly production values, pooled across all 38 companies but winsorized independently *within* each company&#x27;s own scale (k=3.0 IQR, non-zero months only) — a company producing hundreds of thousands of tons a month and one producing a few thousand are never compared against the same global cutoff, which would unfairly flag the larger operation&#x27;s normal variation as &quot;outlier.&quot;</figcaption>
+<figcaption>Raw (orange) vs. winsorized (blue) distribution of monthly production values, pooled across all 38 companies but winsorized independently <em>within</em> each company&#x27;s own scale (k=3.0 IQR, non-zero months only) — a company producing hundreds of thousands of tons a month and one producing a few thousand are never compared against the same global cutoff, which would unfairly flag the larger operation&#x27;s normal variation as &quot;outlier.&quot;</figcaption>
 </figure>
 <figure>
 <img src="figures/produccion_nacional_timeseries.png" alt="National production time series" loading="lazy">
@@ -88,28 +88,28 @@
 </figure>
 <figure>
 <img src="figures/feature_correlation.png" alt="Feature correlation" loading="lazy">
-<figcaption>Correlation heatmap between the lag/rolling features and next month&#x27;s national production. Unlike the financial domain, expect (and the chart shows) visibly strong correlation between production and its own recent lags — copper mining output is highly autocorrelated month to month, which is exactly the structure the seasonal-naive baseline already exploits, and the bar the five trained models have to clear.</figcaption>
+<figcaption>Correlation heatmap between the socioeconomic indicators (health spending, water/sanitation access, GDP per capita, infant mortality, Gini, etc.) and next year&#x27;s life expectancy. Expect — and the chart shows — strong real correlation from infant mortality and basic-services access in particular, the same real drivers epidemiological literature would predict, which is what makes this domain&#x27;s high R² a believable result rather than an overfit one.</figcaption>
 </figure>
 <figure>
 <img src="figures/mlp_training_curve.png" alt="MLP training curve" loading="lazy">
-<figcaption>Train/validation loss vs. epoch, same reading as the financial domain&#x27;s curve. This run is a concrete example of <code>min_epochs=100</code> combined with real early stopping doing its job: the model trained past the 100-epoch floor and then stopped itself at epoch 136 once validation loss stopped improving for the configured patience window, restoring the weights from its best epoch (111), not the final one.</figcaption>
+<figcaption>Train/validation loss vs. epoch for the life-expectancy MLP — note that both the features <em>and</em> the target were z-score scaled before training here (unlike the financial domain, where only the features were scaled), because the target&#x27;s real scale (life-expectancy years, mean ~70) is far from a freshly-initialized network&#x27;s near-zero output range; skipping that step is what originally produced wildly unrealistic predictions (details in <code>model.py</code>&#x27;s docstring).</figcaption>
 </figure>
 <figure>
 <img src="figures/best_model_regression_diagnostics.png" alt="Real vs. predicted, XGBoost" loading="lazy">
-<figcaption>Same actual-vs-predicted-plus-residuals layout as the financial domain&#x27;s diagnostic chart, but for the mining domain&#x27;s best real model. Here the point cloud visibly hugs the dashed diagonal far more tightly than in the financial chart — the direct visual counterpart of XGBoost&#x27;s real R²=0.515, a model that is actually explaining a meaningful share of month-to-month variation, not just matching the financial domain&#x27;s honest near-zero result.</figcaption>
+<figcaption>Actual-vs-predicted scatter plus residuals for the domain&#x27;s best model, Random Forest. The cloud sits tightly along the dashed diagonal across almost the entire real range of the axis (roughly 40 to 85 years), including the countries near the low end — the visual counterpart of a real R²=0.943, the strongest result of all four domains.</figcaption>
 </figure>
 <figure>
 <img src="figures/model_comparison.png" alt="Model comparison" loading="lazy">
-<figcaption>Same grouped-bar format as the financial domain, but here the six bars clearly separate instead of tying: XGBoost&#x27;s bar is visibly taller on R² and shorter on RMSE/MAE than every other model, in every metric — a real, ungrudging win rather than a coin-flip. Random Forest&#x27;s bar is the one closest to it; the LSTM&#x27;s is the shortest R² bar of all six, shorter even than the seasonal baseline&#x27;s.</figcaption>
+<figcaption>Grouped bars per model per metric — the train-mean baseline&#x27;s R² bar is drawn clearly negative (not clipped at zero), the sharpest such contrast of any domain in this project, because a 1960s-era global average is a particularly bad predictor for a 2019–2024 test period given how much the real global trend has moved since then.</figcaption>
 </figure>
 <h2>Domain 3 — Agriculture (World Bank)</h2>
 <figure>
 <img src="figures/missingness_before_after.png" alt="Missingness before/after" loading="lazy">
-<figcaption>One before/after bar pair per indicator. Most indicators barely move (they were already 95%+ complete, the rare gap being a not-yet-reported trailing year). <code>irrigated_land_pct</code> is the visibly different bar in the group — it starts far higher than the rest and does <strong>not</strong> drop to zero after cleaning, because interpolation can only fill a gap that has real data on at least one side of it within the same country, and Peru&#x27;s entire irrigation series has none; that residual bar height is Peru&#x27;s cross-country-mean-imputed cells, kept honestly visible rather than hidden by a chart that only shows the &quot;successful&quot; indicators.</figcaption>
+<figcaption>Before/after bar pair per curated indicator, at the fact-table level (country×indicator×year cells) rather than per-column like the other domains&#x27; charts — the direct numeric counterpart of the 86% gap-recovery rate quoted in the text above, and a reminder that the remaining post-cleaning bar height (14%) is exactly the set of series with literally no real observation anywhere to interpolate from, not a residual bug.</figcaption>
 </figure>
 <figure>
 <img src="figures/feature_correlation.png" alt="Feature correlation" loading="lazy">
-<figcaption>Correlation heatmap between the socioeconomic/agronomic features and next year&#x27;s cereal yield. Unlike the financial domain&#x27;s mostly-white row, expect real color here — fertilizer use and the yield&#x27;s own lags should show visibly strong positive correlation with the target, the direct visual preview of why every trained model lands well above R²=0.79 in the results table.</figcaption>
+<figcaption>Correlation heatmap between the socioeconomic indicators (health spending, water/sanitation access, GDP per capita, infant mortality, Gini, etc.) and next year&#x27;s life expectancy. Expect — and the chart shows — strong real correlation from infant mortality and basic-services access in particular, the same real drivers epidemiological literature would predict, which is what makes this domain&#x27;s high R² a believable result rather than an overfit one.</figcaption>
 </figure>
 <figure>
 <img src="figures/cereal_yield_timeseries_CHL.png" alt="Cereal yield, Chile" loading="lazy">
@@ -121,20 +121,20 @@
 </figure>
 <figure>
 <img src="figures/mlp_training_curve.png" alt="MLP training curve" loading="lazy">
-<figcaption>Train/validation loss vs. epoch. This run illustrates the <code>min_epochs=100</code> floor working as intended on a domain with real signal: the model needed the full runway past epoch 100 to keep improving, early-stopping only once it plateaued at epoch 330, with its best real checkpoint saved from epoch 305.</figcaption>
+<figcaption>Train/validation loss vs. epoch for the life-expectancy MLP — note that both the features <em>and</em> the target were z-score scaled before training here (unlike the financial domain, where only the features were scaled), because the target&#x27;s real scale (life-expectancy years, mean ~70) is far from a freshly-initialized network&#x27;s near-zero output range; skipping that step is what originally produced wildly unrealistic predictions (details in <code>model.py</code>&#x27;s docstring).</figcaption>
 </figure>
 <figure>
 <img src="figures/best_model_regression_diagnostics.png" alt="Real vs. predicted yield" loading="lazy">
-<figcaption>Actual-vs-predicted scatter plus residuals, same layout as the other three domains, for this domain&#x27;s best model — Random Forest, selected by real test R² rather than fixed in advance, which is why this chart changed model when the three new families were added. The point cloud sits visibly close to the dashed diagonal across nearly the full yield range — the visual counterpart of a real R²≈0.90, not a cherry-picked good-looking subset.</figcaption>
+<figcaption>Actual-vs-predicted scatter plus residuals for the domain&#x27;s best model, Random Forest. The cloud sits tightly along the dashed diagonal across almost the entire real range of the axis (roughly 40 to 85 years), including the countries near the low end — the visual counterpart of a real R²=0.943, the strongest result of all four domains.</figcaption>
 </figure>
 <figure>
 <img src="figures/model_comparison.png" alt="Model comparison" loading="lazy">
-<figcaption>Grouped bars per model per metric. The baseline&#x27;s R² bar actually dips *below* zero (the axis is drawn to show it honestly rather than clipped at 0), visually making the point that &quot;the historical average&quot; is a genuinely bad predictor here — while all five trained models&#x27; bars stand clearly, similarly tall.</figcaption>
+<figcaption>Grouped bars per model per metric — the train-mean baseline&#x27;s R² bar is drawn clearly negative (not clipped at zero), the sharpest such contrast of any domain in this project, because a 1960s-era global average is a particularly bad predictor for a 2019–2024 test period given how much the real global trend has moved since then.</figcaption>
 </figure>
 <h2>Domain 4 — Excel cleaning for consultancies: data lake → data warehouse</h2>
 <figure>
 <img src="figures/etl_funnel.png" alt="ETL funnel" loading="lazy">
-<figcaption>A horizontal bar per pipeline stage, each labeled with its real row count, read top to bottom: the wide raw extract (2,660 country×indicator rows, one per curated indicator) → melted to long format (172,900 country×indicator×year rows, one per real or missing observation) → after excluding regional/income aggregates via the <code>Country</code> sheet&#x27;s <code>Region</code> field (141,050) → rows with a real, non-null value before any interpolation (79,597) → after within-series interpolation recovers recoverable gaps (132,600). The gap between any two consecutive bars is a real, countable effect of one specific cleaning step, not an estimate.</figcaption>
+<figcaption>A horizontal bar per pipeline stage, each labeled with its real row count, read top to bottom: the wide raw extract (2,660 country×indicator rows, one per curated indicator) → melted to long format (172,900 country×indicator×year rows, one per real or missing observation) → after excluding regional/income aggregates via the <code>Country</code> sheet&#x27;s <code>Region</code> field (141,050) → rows with a real, non-null value before any interpolation (79,597) → after within-series interpolation recovers recoverable gaps (132,600).</figcaption>
 </figure>
 <figure>
 <img src="figures/missingness_before_after.png" alt="Missingness before/after" loading="lazy">
@@ -150,7 +150,7 @@
 </figure>
 <figure>
 <img src="figures/mlp_training_curve.png" alt="MLP training curve" loading="lazy">
-<figcaption>Train/validation loss vs. epoch for the life-expectancy MLP — note that both the features *and* the target were z-score scaled before training here (unlike the financial domain, where only the features were scaled), because the target&#x27;s real scale (life-expectancy years, mean ~70) is far from a freshly-initialized network&#x27;s near-zero output range; skipping that step is what originally produced wildly unrealistic predictions (details in <code>model.py</code>&#x27;s docstring).</figcaption>
+<figcaption>Train/validation loss vs. epoch for the life-expectancy MLP — note that both the features <em>and</em> the target were z-score scaled before training here (unlike the financial domain, where only the features were scaled), because the target&#x27;s real scale (life-expectancy years, mean ~70) is far from a freshly-initialized network&#x27;s near-zero output range; skipping that step is what originally produced wildly unrealistic predictions (details in <code>model.py</code>&#x27;s docstring).</figcaption>
 </figure>
 <figure>
 <img src="figures/best_model_regression_diagnostics.png" alt="Real vs. predicted life expectancy, XGBoost" loading="lazy">
